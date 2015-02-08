@@ -17,7 +17,6 @@
 # USA
 #
 
-
 from sympy.geometry import Point, Segment, Circle
 
 
