@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2014 Christopher Bura
+# Copyright (C) 2014-2015 Christopher Bura
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
 # USA
 #
 
-from sympy.geometry import Point, Segment, Circle
+from cassowary import SimplexSolver, Variable, REQUIRED
 
 
 class Drawing(object):
@@ -25,6 +25,7 @@ class Drawing(object):
         super(Drawing, self).__init__(*args, **kwargs)
         self.title = title
         self.layers = []
+        self.constraints = []
 
     @property
     def layer_count(self):
@@ -70,6 +71,19 @@ class Drawing(object):
         # entities on layer when used with a gui
         layer.show()
         self.hide_layers(exclude=[layer])
+
+    def add_constraint(self, constraint):
+        self.constraints.append(constraint)
+
+    def solve(self):
+        solver = SimplexSolver()
+
+        for constraint in self.constraints:
+            constraint.apply(solver)
+
+    def update(self):
+        for layer in self.layers:
+            layer.update()
 
 
 class Layer(object):
@@ -130,6 +144,10 @@ class Layer(object):
         for entity in self.filter_entities(entities, exclude):
             entity.show()
 
+    def update(self):
+        for entity in self.entities:
+            entity.update()
+
 
 class LayerEntity(object):
     def __init__(self, *args, **kwargs):
@@ -151,14 +169,80 @@ class LayerEntity(object):
             return True
         return False
 
+    def update(self):
+        pass
 
-class Point(LayerEntity, Point):
+
+class Point(LayerEntity):
+    def __init__(self, x, y, *args, **kwargs):
+        super(Point, self).__init__(*args, **kwargs)
+
+        self._x = x
+        self._y = y
+
+        self.solver_variables = [
+            Variable('x{}'.format(id(self)), self.x),
+            Variable('y{}'.format(id(self)), self.y)
+        ]
+
+    def update(self):
+        self.x = self.solver_variables[0].value
+        self.y = self.solver_variables[1].value
+
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, value):
+        self._x = value
+
+    @property
+    def y(self):
+        return self._y
+
+    @y.setter
+    def y(self, value):
+        self._y = value
+
+
+class Segment(LayerEntity):
     pass
 
 
-class Segment(LayerEntity, Segment):
+class Circle(LayerEntity):
     pass
 
 
-class Circle(LayerEntity, Circle):
+class Constraint(object):
     pass
+
+
+class FixedConstraint(Constraint):
+    def __init__(self, point):
+        super(FixedConstraint, self).__init__()
+        self.point = point
+
+    def apply(self, solver):
+        solver.add_stay(self.point.solver_variables[0], REQUIRED)
+        solver.add_stay(self.point.solver_variables[1], REQUIRED)
+
+
+class HorizontalConstraint(Constraint):
+    def __init__(self, p1, p2):
+        super(HorizontalConstraint, self).__init__()
+        self.p1 = p1
+        self.p2 = p2
+
+    def apply(self, solver):
+        solver.add_constraint(self.p1.solver_variables[1] == self.p2.solver_variables[1])
+
+
+class VerticalConstraint(Constraint):
+    def __init__(self, p1, p2):
+        super(VerticalConstraint, self).__init__()
+        self.p1 = p1
+        self.p2 = p2
+
+    def apply(self, solver):
+        solver.add_constraint(self.p1.solver_variables[0] == self.p2.solver_variables[0])
