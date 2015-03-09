@@ -21,8 +21,8 @@ from nose.tools import assert_equal, assert_raises, assert_false, assert_true, r
 from cassowary import RequiredFailure
 
 from pythoncad.new_api import Drawing, Layer, Point, Segment
-from pythoncad.new_api import HorizontalConstraint, VerticalConstraint, FixedConstraint
-
+from pythoncad.new_api import HorizontalConstraint, VerticalConstraint, FixedConstraint, LengthConstraint
+from pythoncad.new_api import HorizontalLengthConstraint
 
 def test_solver():
     drawing = Drawing()
@@ -78,21 +78,73 @@ def test_fixed_constraint():
 
     drawing.solve()
 
-# def test_horizontal_segment():
-#     drawing = Drawing()
+def test_horizontal_segment():
+    drawing = Drawing()
 
-#     layer = Layer(title='Layer')
-#     drawing.add_layer(layer)
+    layer = Layer(title='Layer')
+    drawing.add_layer(layer)
 
-#     segment = Segment(Point(0, 0), Point(5, 5))
-#     layer.add_entity(segment)
+    segment = Segment(Point(0, 0), Point(5, 5))
+    layer.add_entity(segment)
 
-#     constraint = HorizontalConstraint(segment)
-#     drawing.add_constraint(constraint)
+    constraint = HorizontalConstraint(segment)
+    drawing.add_constraint(constraint)
 
-#     assert_false(segment.p1.y == segment.p2.y)
+    assert_false(segment.p1.y == segment.p2.y)
 
-#     drawing.solve()
-#     drawing.update()
+    drawing.solve()
+    drawing.update()
 
-#     assert_true(segment.p1.y == segment.p2.y)
+    assert_true(segment.p1.y == segment.p2.y)
+
+def test_length_constraint():
+    drawing = Drawing()
+    layer = Layer(title='Layer')
+    drawing.add_layer(layer)
+
+    point1 = Point(10, 10)
+    point2 = Point(20, 20)
+    layer.add_entity(point1)
+    layer.add_entity(point2)
+
+    horizontal_constraint = HorizontalConstraint(point1, point2)
+    drawing.add_constraint(horizontal_constraint)
+
+    drawing.solve()
+    drawing.update()
+
+    assert_true(point1.y == point2.y)
+
+    length_constraint = LengthConstraint(point1, point2, 50)
+    drawing.add_constraint(length_constraint)
+
+    drawing.solve()
+    drawing.update()
+
+    assert_true(point2.x == 60)
+
+def test_horizontal_length_constraint():
+    drawing = Drawing()
+    layer = Layer(title='Layer')
+    drawing.add_layer(layer)
+
+    point1 = Point(10, 10)
+    point2 = Point(20, 20)
+    layer.add_entity(point1)
+    layer.add_entity(point2)
+
+    horizontal_constraint = HorizontalConstraint(point1, point2)
+    drawing.add_constraint(horizontal_constraint)
+
+    drawing.solve()
+    drawing.update()
+
+    assert_true(point1.y == point2.y)
+
+    length_constraint = HorizontalLengthConstraint(point1, point2, 50)
+    drawing.add_constraint(length_constraint)
+
+    drawing.solve()
+    drawing.update()
+
+    assert_true(point2.x == 60)

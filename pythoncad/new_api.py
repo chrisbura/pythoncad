@@ -17,6 +17,8 @@
 # USA
 #
 
+from math import sqrt
+
 from cassowary import SimplexSolver, Variable, REQUIRED
 
 
@@ -246,3 +248,32 @@ class VerticalConstraint(Constraint):
 
     def apply(self, solver):
         solver.add_constraint(self.p1.solver_variables[0] == self.p2.solver_variables[0])
+
+
+class LengthConstraint(Constraint):
+    def __init__(self, p1, p2, length):
+        super(LengthConstraint, self).__init__()
+        self.p1 = p1
+        self.p2 = p2
+        self.length = length
+
+    def apply(self, solver):
+        x = self.p2.solver_variables[0] - self.p1.solver_variables[0]
+        y = self.p2.solver_variables[1] - self.p1.solver_variables[1]
+
+        # TODO: Cassowary doesn't support __mul__ or __div__ with expressions
+        solver.add_constraint(sqrt((x)**2 + (y)**2) == self.length)
+
+
+class HorizontalLengthConstraint(Constraint):
+    def __init__(self, p1, p2, length):
+        super(HorizontalLengthConstraint, self).__init__()
+        self.p1 = p1
+        self.p2 = p2
+        self.length = length
+
+    def apply(self, solver):
+        x = abs(self.p2.solver_variables[0] - self.p1.solver_variables[0])
+
+        # TODO: Cassowary doesn't support abs
+        solver.add_constraint(x == self.length)
